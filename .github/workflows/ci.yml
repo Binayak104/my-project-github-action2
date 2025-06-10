@@ -38,8 +38,8 @@ jobs:
       # The 'key' combines OS, 'gradle', and a hash of Gradle-related files,
       # ensuring the cache is specific to the project's dependencies.
       # 'restore-keys' helps restore a compatible cache if the exact key isn't found.
-      # IMPORTANT: Replace 'v2' or find a specific commit hash for actions/cache.
-      uses: actions/cache@v2
+      # UPDATED: Using v4 as v2 is deprecated.
+      uses: actions/cache@v4
       with:
         path: ~/.gradle/caches # Path to the Gradle caches directory
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
@@ -66,8 +66,8 @@ jobs:
       # Uses actions/upload-artifact to save the built JAR.
       # This makes the JAR available for download from the GitHub Actions run summary,
       # which is useful for debugging or later deployment stages.
-      # IMPORTANT: Replace 'v2' or find a specific commit hash for actions/upload-artifact.
-      uses: actions/upload-artifact@v2
+      # UPDATED: Using v4 as v2 is deprecated.
+      uses: actions/upload-artifact@v4
       with:
         name: demo-app-jar # Name of the artifact
         path: build/libs/*.jar # Path to the JAR file(s). Assumes Gradle outputs to build/libs/.
@@ -86,4 +86,3 @@ jobs:
         registry: docker.io # Your Docker registry (e.g., docker.io)
         username: ${{ secrets.DOCKER_USERNAME }} # GitHub Secret for Docker Hub username
         password: ${{ secrets.DOCKER_PASSWORD }} # GitHub Secret for Docker Hub password
-
