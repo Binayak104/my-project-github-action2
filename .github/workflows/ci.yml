@@ -1,88 +1,66 @@
-# This workflow performs Continuous Integration (CI) for a Java application
-# using Gradle, including building, testing, artifact uploading, and Docker image creation.
-
 name: Java CI with Gradle
 
-# Define when the workflow should run.
 on:
   push:
-    branches: [ master ] # Trigger on pushes to the 'master' branch
+    branches: [ master ]
   pull_request:
-    branches: [ master ] # Trigger on pull requests targeting the 'master' branch
+    branches: [ master ]
 
 jobs:
-  build-and-deploy: # Name of the main job
-    runs-on: ubuntu-latest # Specify the operating system for the runner
+  build-java: # Changed job name to build-java as per your original code
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code # Step to check out the repository code
-      # Uses actions/checkout to get your code.
-      # Pinning to a specific commit hash for security and stability.
-      # IMPORTANT: Replace 'b4ffde65f46336ab88eb5afa53ea30b8ad550c96' with the latest secure commit hash
-      # from the actions/checkout repository (e.g., from its releases page).
-      uses: actions/checkout@b4ffde65f46336ab88eb5afa53ea30b8ad550c96
+    - uses: actions/checkout@v2
 
-    - name: Set up JDK 1.8 # Step to set up the Java Development Kit
-      # Uses actions/setup-java to configure the Java environment.
-      # Pinning to a specific commit hash for security and stability.
-      # IMPORTANT: Replace 'v1' or find a specific commit hash for actions/setup-java.
+    - name: Set up JDK 1.8
       uses: actions/setup-java@v1
       with:
-        java-version: 1.8 # Specify JDK version 1.8
+        java-version: 1.8
 
-    - name: Grant execute permission for gradlew # Ensure gradlew is executable
-      run: chmod +x gradlew # Changes file permissions to make the Gradle wrapper script executable
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
-    - name: Cache Gradle packages # Step to cache Gradle dependencies for faster builds
-      # Uses actions/cache to cache Gradle's dependency directories.
-      # The 'key' combines OS, 'gradle', and a hash of Gradle-related files,
-      # ensuring the cache is specific to the project's dependencies.
-      # 'restore-keys' helps restore a compatible cache if the exact key isn't found.
-      # UPDATED: Using v4 as v2 is deprecated.
-      uses: actions/cache@v4
+    # Adding caching for Gradle dependencies to speed up builds
+    - name: Cache Gradle packages
+      uses: actions/cache@v4 # Updated to v4 to avoid deprecation warnings
       with:
-        path: ~/.gradle/caches # Path to the Gradle caches directory
+        path: ~/.gradle/caches
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Build with Gradle # Step to build the Java application using Gradle
-      run: ./gradlew build # Executes the Gradle build command
+    - name: Build with Gradle
+      run: ./gradlew build
 
-    - name: Run Unit and Integration Tests # Step to execute tests
-      # It's crucial to run tests as part of your CI pipeline to ensure code quality.
-      run: ./gradlew test # Executes the Gradle test command
+    - name: Run Unit and Integration Tests # Added a test step, as it's crucial for CI
+      run: ./gradlew test
 
-    - name: Verify JAR existence before Docker build # Debugging step to confirm JAR presence
-      # This step lists the contents of the 'build/libs' directory.
-      # It's vital to ensure the JAR file is present where the Dockerfile expects it.
+    # --- Code to check JAR existence ---
+    - name: Check if JAR was created and list contents
+      # This step explicitly lists the contents of the 'build/libs' directory.
+      # It's vital to ensure the JAR file is present where the Dockerfile expects it
+      # and to confirm its exact filename.
       run: |
-        echo "Listing contents of build/libs/ before Docker build:"
+        echo "Listing contents of build/libs/:"
         ls -la build/libs/
-        # You can add a check here to fail the workflow if the JAR is not found:
-        # find build/libs -name "*.jar" -print -quit | grep -q . || { echo "ERROR: No JAR found in build/libs/! Aborting Docker build."; exit 1; }
+        # Optional: You can uncomment the following line to make the workflow fail
+        # if no JAR is found, which can help in early debugging of build issues.
+        # find build/libs -name "*.jar" -print -quit | grep -q . || { echo "ERROR: No JAR found in build/libs/! Aborting workflow."; exit 1; }
+    # --- End of JAR existence check code ---
 
-    - name: Upload JAR as artifact # Step to upload the compiled JAR as a workflow artifact
-      # Uses actions/upload-artifact to save the built JAR.
-      # This makes the JAR available for download from the GitHub Actions run summary,
-      # which is useful for debugging or later deployment stages.
-      # UPDATED: Using v4 as v2 is deprecated.
-      uses: actions/upload-artifact@v4
+    - name: Upload JAR as artifact # Added artifact upload for built JAR
+      uses: actions/upload-artifact@v4 # Updated to v4 to avoid deprecation warnings
       with:
-        name: demo-app-jar # Name of the artifact
-        path: build/libs/*.jar # Path to the JAR file(s). Assumes Gradle outputs to build/libs/.
+        name: demo-app-jar
+        path: build/libs/*.jar # Assumes your JAR is in build/libs/ and ends with .jar
 
-    - name: Build and Push Docker Image # Step to build and push the Docker image
-      # Uses the mr-smithers-excellent/docker-build-push action.
-      # This action simplifies building and pushing Docker images to a registry.
-      # IMPORTANT: Replace 'v4' or find a specific commit hash for this action.
-      # Also, ensure your Dockerfile's COPY command correctly references the JAR path.
+    - name: Build and Push Docker Image
       uses: mr-smithers-excellent/docker-build-push@v4
       with:
-        image: binayaksre/demo-app # Name of your Docker image
-        # Tags the Docker image with the Git commit SHA for unique versioning.
-        # This is better than 'latest' for traceability.
+        image: binayaksre/demo-app
+        # Using the commit SHA as a tag for better traceability
         tags: ${{ github.sha }}
-        registry: docker.io # Your Docker registry (e.g., docker.io)
-        username: ${{ secrets.DOCKER_USERNAME }} # GitHub Secret for Docker Hub username
-        password: ${{ secrets.DOCKER_PASSWORD }} # GitHub Secret for Docker Hub password
+        registry: docker.io
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
