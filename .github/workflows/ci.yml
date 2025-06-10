@@ -53,7 +53,8 @@ jobs:
       uses: actions/upload-artifact@v4 # Updated to v4 to avoid deprecation warnings
       with:
         name: demo-app-jar
-        path: build/libs/*.jar # Assumes your JAR is in build/libs/ and ends with .jar
+        # IMPORTANT CHANGE: Updated path to match the actual JAR name produced by Gradle.
+        path: build/libs/java-app-1.0-SNAPSHOT.jar
 
     - name: Build and Push Docker Image
       uses: mr-smithers-excellent/docker-build-push@v4
